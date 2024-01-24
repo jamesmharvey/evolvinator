@@ -46,7 +46,7 @@ unsigned long sendNTPpacket(byte *address)
 // timeCheck
 void timeCheck() {
   t = now();
-  if (year(t) == 2012 && currentMs - msBackup > 5 * 60000) {
+  if (year(t) >= 2024 && currentMs - msBackup > 5 * 60000) {
     tBackup = now();
     msBackup = millis();
     if (debugMode) {
@@ -54,7 +54,7 @@ void timeCheck() {
       Serial.println(tBackup);
     }
   }
-  if (year(t) != 2012) {
+  if (year(t) < 2024) {
     if (debugMode) {
       Serial.println("Year is wrong: ");
       Serial.println(year(t));
