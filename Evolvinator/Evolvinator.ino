@@ -25,7 +25,7 @@ Evolvinator
 // Ethernet
 byte mac[] = { 
   0x90, 0xA2, 0xDA, 0x00, 0x4F, 0x74 };   // ENTER MAC address of ethernet shield
-IPAddress ip(192, 168, 100, 52);          // ENTER IP address 
+  IPAddress ip(192, 168, 1, 44);          // ENTER IP address 
 /*byte mac[] = { 
  0x90, 0xA2, 0xDA, 0x00, 0x59, 0x5E };    
  byte ip[] = { 
@@ -99,7 +99,8 @@ void setup() {
   // Serial, Ethernet
   Serial.begin(9600);
   pinMode(53, OUTPUT);                      // SS pin on Mega
-  Ethernet.begin(mac, ip);
+  // Ethernet.begin(mac);                   // Use for DHCP
+  Ethernet.begin(mac, ip);                  // Use for static IP
   server.begin();
   delay(1);                                 // give it a msecond to connect
 
