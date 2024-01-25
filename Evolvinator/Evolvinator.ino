@@ -25,12 +25,6 @@ Evolvinator
 // Ethernet
 byte mac[] = { 
   0x90, 0xA2, 0xDA, 0x00, 0x4F, 0x74 };   // ENTER MAC address of ethernet shield
-  IPAddress ip(192, 168, 1, 44);          // ENTER IP address 
-/*byte mac[] = { 
- 0x90, 0xA2, 0xDA, 0x00, 0x59, 0x5E };    
- byte ip[] = { 
- 192, 168, 100, 53 };*/
-// static ip address to connect to
 EthernetServer server(80);                // default web request server
 EthernetUDP Udp;
 
@@ -43,7 +37,7 @@ unsigned long oldMsPulseFed = 0;
 
 const int localPort = 8888;               // local port to listen for UDP packets
 byte timeServer[] = { 
-  192, 43, 244, 18};                      // time.nist.gov NTP server
+  216, 239, 35, 0};                       // time1.google.com NTP server
 const int NTP_PACKET_SIZE= 48;            // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE];      // buffer to hold incoming and outgoing packets from NTP
 
@@ -99,8 +93,12 @@ void setup() {
   // Serial, Ethernet
   Serial.begin(9600);
   pinMode(53, OUTPUT);                      // SS pin on Mega
-  // Ethernet.begin(mac);                   // Use for DHCP
-  Ethernet.begin(mac, ip);                  // Use for static IP
+  Ethernet.begin(mac);                      // Use for DHCP
+  // TODO: add error handling if DHCP fails
+  if (debugMode) {
+    Serial.print("Local IP address: ");
+    Serial.println(Ethernet.localIP());
+  }
   server.begin();
   delay(1);                                 // give it a msecond to connect
 
@@ -143,6 +141,9 @@ void setup() {
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loop - is program <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 void loop() {
+
+  // Maintain DHCP lease
+  Ethernet.maintain();
 
   // If run has started
   if (tStart) {
