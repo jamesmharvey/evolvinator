@@ -41,7 +41,6 @@ byte timeServer[] = {
 const int NTP_PACKET_SIZE= 48;            // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE];      // buffer to hold incoming and outgoing packets from NTP
 
-time_t epoch;
 time_t tStart;                            // starting time
 time_t t;                                 // current time
 time_t tElapsed;                          // elapsed time (s)
@@ -124,8 +123,8 @@ void setup() {
 
   // Timer
   Udp.begin(localPort);
-  setSyncProvider(getTime);                 // sync interval default is 5 mins
-  setSyncInterval(60 * 5);
+  setSyncProvider(getTime);
+  setSyncInterval(60 * 5);                  // sync interval default is 5 mins
   tUnixStart = tUnix; 
   tBackup = now();                          // set back up time
   msBackup = millis();                      // set assocated backup time on Arduino's internal clock
