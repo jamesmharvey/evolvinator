@@ -28,7 +28,7 @@ void webLoop() {
 
         client.print("The Evolvinator");
         client.print("<br />");
-        client.print("<a href=\"http://pterodactyl.ginkgobioworks.com:8081\" target=\"_blank\">View Evolvinator</a>");
+        client.print("<a href=\"https://openwetware.org/wiki/Evolvinator\" target=\"_blank\">View Evolvinator</a>");
         client.print("<p>");
         displayData(client, "Volume", volume, "ml");
         displayData(client, "OD Threshold", ODDesired, "A600");
@@ -115,7 +115,9 @@ void htmlFooter(EthernetClient client) {
 
 void htmlRedirect(EthernetClient client) {
   client.println("<HTML>\n<HEAD>");
-  client.println("<meta http-equiv='Refresh' content='0;url=http://192.168.1.44' />");
+  client.print("<meta http-equiv='Refresh' content='30';url=http://");
+  client.print(Ethernet.localIP());
+  client.println("' />");
   client.println("<BODY>Redirecting</BODY>");
   client.println("</HEAD>\n</HTML>");
 }
