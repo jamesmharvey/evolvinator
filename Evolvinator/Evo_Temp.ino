@@ -17,6 +17,7 @@ int tempSet() {
 int tempRead() {
   // Local Variables
   static float temp1Min[12];         // readings from last 12 measurements
+  int numTempReads = 0;
   float temp1MinAvg;
   int Vsupply = 4700;                // supply voltage in 10^-4 V (silly units needed for integer math) should be 5 V
   int ADCValue;                      // value read from temp sensor (0-1023) converted to 0-5V (4.9mV resoltuion)
@@ -32,10 +33,13 @@ int tempRead() {
   }
   temp1Min[0] = temp;  
   temp1MinAvg = 0;                                       
-  for (int x = 0; x < 12; x++) {
+  if (numTempReads < 12) {
+    numTempReads++;
+  }
+  for (int x = 0; x < numTempReads; x++) {
     temp1MinAvg += temp1Min[x];
   }
-  temp1MinAvg = temp1MinAvg / 12;
+  temp1MinAvg = temp1MinAvg / numTempReads;
   tempPrintAvg = temp1MinAvg * 1.0401 + 7.2117;                  // convert to temp of water for print **FUNC FROM CALIBRATION**
 
   if (debugMode) {
