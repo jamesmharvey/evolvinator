@@ -21,6 +21,9 @@ Evolvinator
 #include <TimeLib.h>
 #include <SD.h>
 #include <PID_v1.h>
+#include <Wire.h>
+#include <hd44780.h>                       // main hd44780 header https://github.com/duinoWitchery/hd44780
+#include <hd44780ioClass/hd44780_I2Cexp.h> // i2c expander i/o class header
 
 // Ethernet
 byte mac[] = { 
@@ -34,6 +37,7 @@ unsigned long oldMsTempRead = 0;
 unsigned long oldMsTempCheck = 0;
 unsigned long oldMsODRead = 0;
 unsigned long oldMsPulseFed = 0;         
+unsigned long oldMsLcdWrite = 0;
 
 const int localPort = 8888;               // local port to listen for UDP packets
 byte timeServer[] = { 
@@ -84,6 +88,11 @@ boolean calibrationMode = false;
 // SD
 const int pinSD = 4;
 
+// LCD
+
+hd44780_I2Cexp lcd;                        // declare lcd object: auto locate & auto config expander chip
+
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setup - runs once <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 void setup() {
   // General
@@ -100,6 +109,7 @@ void setup() {
   }
   server.begin();
   delay(1);                                 // give it a msecond to connect
+
 
   // Pump Control
   pinMode(pinP1FlowWrite, OUTPUT);          // output to pump what speed it should go (tone between 0-200 Hz)
@@ -136,6 +146,14 @@ void setup() {
 
   // SD
   SD.begin(pinSD);
+
+  // LCD
+  lcd.begin(20,4);
+  lcd.backlight();
+  lcd.clear();
+  lcd.print("Evolvinator start...");
+  lcd.setCursor(0, 1);
+  lcd.print(Ethernet.localIP());
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loop - is program <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -176,6 +194,12 @@ void loop() {
   
   // Check for web requests
   webLoop(); 
+
+  // Update LCD
+  if (currentMs - oldMsLcdWrite > 1000) {
+    oldMsLcdWrite = currentMs;
+    LcdUpdate();
+  }
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Functions - List function calls below <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
