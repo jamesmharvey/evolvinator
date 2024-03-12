@@ -28,8 +28,13 @@ void AdafruitIOLoop() {
 }
 
 void LogDataToAdafruitIO(){
-  Serial.print("Logging temp to Adafruit: ");
+  Serial.println("Logging data to Adafruit: ");
+  Serial.print("temp: ");
   Serial.println(tempPrintAvg);
+  Serial.print("od: ");
+  Serial.println(ODMin[0]);
+  Serial.print("total volume: ");
+  Serial.println(totalVol);
   temperature->save(tempPrintAvg);
   od->save(ODMin[0]);
   totalvolume->save(totalVol);
