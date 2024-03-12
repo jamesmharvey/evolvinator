@@ -38,6 +38,7 @@ unsigned long oldMsTempCheck = 0;
 unsigned long oldMsODRead = 0;
 unsigned long oldMsPulseFed = 0;         
 unsigned long oldMsLcdWrite = 0;
+unsigned long oldMsAdafruitWrite = 0;
 
 const int localPort = 8888;               // local port to listen for UDP packets
 byte timeServer[] = { 
@@ -58,6 +59,7 @@ unsigned long msElapsedPrestart;          // ms elapsed run start.
 // Flow
 const byte pinP1FlowWrite = 0;            // which pin tells p1 (through pin 14) what speed (0-200 Hz)
 unsigned long feedFrequency = 180000;     // frequency of the pulses given (default 1 ever 3 minutes)
+float totalVol = 0;                       // total volume added
 
 // OD
 const byte pinODLED = 1;                  // pin that powers the OD LED
@@ -154,6 +156,9 @@ void setup() {
   lcd.print("Evolvinator start...");
   lcd.setCursor(0, 1);
   lcd.print(Ethernet.localIP());
+
+  // Adafruit IO
+  AdafruitIOInitialize();
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loop - is program <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -199,6 +204,12 @@ void loop() {
   if (currentMs - oldMsLcdWrite > 1000) {
     oldMsLcdWrite = currentMs;
     LcdUpdate();
+  }
+
+  // Log to Adafruit every 10 seconds
+  if (currentMs - oldMsAdafruitWrite > 10000) {
+    oldMsAdafruitWrite = currentMs;
+    LogDataToAdafruitIO();
   }
 }
 

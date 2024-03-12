@@ -12,7 +12,6 @@ float volume = 30;                        // The chamber volume
 int pulseFreq;                            // hz to set to pump
 unsigned long pulseDuration = 10000;      // default is 10 second pulse (do not change)
 float pulseVol;                           // volume of pulse
-float totalVol = 0;                       // total volume added
 int pulseCount = 0;
 
 
