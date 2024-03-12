@@ -159,6 +159,9 @@ void setup() {
 
   // Adafruit IO
   AdafruitIOInitialize();
+
+  // Rotary Encoder
+  setupRotaryEncoder();
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loop - is program <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -211,6 +214,9 @@ void loop() {
     oldMsAdafruitWrite = currentMs;
     LogDataToAdafruitIO();
   }
+
+  // Read rotary encoder
+  readRotaryEncoder();
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Functions - List function calls below <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
