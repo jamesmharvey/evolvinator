@@ -2,7 +2,7 @@
 
 // Setting time to NTP server
 unsigned long getTime() {
-  if (debugMode) Serial.println("Time being synced");
+  if (debugMode) Serial.println("Time being synced via NTP");
   sendNTPpacket(timeServer);                                           // send an NTP packet to a time server
   delay(1000);                                                         // wait to see if a reply is available
   if (Udp.parsePacket()) {  
@@ -10,19 +10,34 @@ unsigned long getTime() {
     unsigned long highWord = word(packetBuffer[40], packetBuffer[41]); // get timestamp words
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);  
     unsigned long secsSince1900 = highWord << 16 | lowWord;            // combine into integer (seconds since Jan 1 1900)
-    unsigned long timeZone = 18000L;                                   // EST w/o daylights savings
     unsigned long seventyYears = 2208988800UL;                         // change to unix time 
     tUnix = secsSince1900 - seventyYears;                              // record unix time   
-    epoch = secsSince1900 - seventyYears - timeZone;
     if (debugMode) {
       Serial.print("Seconds since Jan 1 1900 = " );
       Serial.println(secsSince1900);
       Serial.print("Unix time = ");
       Serial.println(tUnix);
-      Serial.print("Unix time EST = ");
-      Serial.println(epoch);
+      Serial.print("Human readable time: ");
+      Serial.print(year(tUnix));
+      Serial.print("-");
+      Serial.print(month(tUnix));
+      Serial.print("-");
+      Serial.print(day(tUnix));
+      Serial.print(" ");
+      Serial.print(hour(tUnix));
+      Serial.print(":");
+      if (minute(tUnix) < 10) {
+        Serial.print("0");
+      }
+      Serial.print(minute(tUnix));
+      Serial.print(":");
+      if (second(tUnix) < 10) {
+        Serial.print("0");
+      }
+      Serial.print(second(tUnix));
+      Serial.println(" UTC");
     }
-    return epoch;
+    return tUnix;
   }
 }
 
@@ -46,7 +61,7 @@ unsigned long sendNTPpacket(byte *address)
 // timeCheck
 void timeCheck() {
   t = now();
-  if (year(t) == 2012 && currentMs - msBackup > 5 * 60000) {
+  if (year(t) >= 2024 && currentMs - msBackup > 5 * 60000) {
     tBackup = now();
     msBackup = millis();
     if (debugMode) {
@@ -54,7 +69,7 @@ void timeCheck() {
       Serial.println(tBackup);
     }
   }
-  if (year(t) != 2012) {
+  if (year(t) < 2024) {
     if (debugMode) {
       Serial.println("Year is wrong: ");
       Serial.println(year(t));

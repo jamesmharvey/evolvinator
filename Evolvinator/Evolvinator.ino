@@ -21,16 +21,13 @@ Evolvinator
 #include <TimeLib.h>
 #include <SD.h>
 #include <PID_v1.h>
+#include <Wire.h>
+#include <hd44780.h>                       // main hd44780 header https://github.com/duinoWitchery/hd44780
+#include <hd44780ioClass/hd44780_I2Cexp.h> // i2c expander i/o class header
 
 // Ethernet
 byte mac[] = { 
   0x90, 0xA2, 0xDA, 0x00, 0x4F, 0x74 };   // ENTER MAC address of ethernet shield
-IPAddress ip(192, 168, 100, 52);          // ENTER IP address 
-/*byte mac[] = { 
- 0x90, 0xA2, 0xDA, 0x00, 0x59, 0x5E };    
- byte ip[] = { 
- 192, 168, 100, 53 };*/
-// static ip address to connect to
 EthernetServer server(80);                // default web request server
 EthernetUDP Udp;
 
@@ -40,14 +37,15 @@ unsigned long oldMsTempRead = 0;
 unsigned long oldMsTempCheck = 0;
 unsigned long oldMsODRead = 0;
 unsigned long oldMsPulseFed = 0;         
+unsigned long oldMsLcdWrite = 0;
+unsigned long oldMsAdafruitWrite = 0;
 
 const int localPort = 8888;               // local port to listen for UDP packets
 byte timeServer[] = { 
-  192, 43, 244, 18};                      // time.nist.gov NTP server
+  216, 239, 35, 0};                       // time1.google.com NTP server
 const int NTP_PACKET_SIZE= 48;            // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE];      // buffer to hold incoming and outgoing packets from NTP
 
-time_t epoch;
 time_t tStart;                            // starting time
 time_t t;                                 // current time
 time_t tElapsed;                          // elapsed time (s)
@@ -61,6 +59,7 @@ unsigned long msElapsedPrestart;          // ms elapsed run start.
 // Flow
 const byte pinP1FlowWrite = 0;            // which pin tells p1 (through pin 14) what speed (0-200 Hz)
 unsigned long feedFrequency = 180000;     // frequency of the pulses given (default 1 ever 3 minutes)
+float totalVol = 0;                       // total volume added
 
 // OD
 const byte pinODLED = 1;                  // pin that powers the OD LED
@@ -91,6 +90,11 @@ boolean calibrationMode = false;
 // SD
 const int pinSD = 4;
 
+// LCD
+
+hd44780_I2Cexp lcd;                        // declare lcd object: auto locate & auto config expander chip
+
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setup - runs once <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 void setup() {
   // General
@@ -99,9 +103,15 @@ void setup() {
   // Serial, Ethernet
   Serial.begin(9600);
   pinMode(53, OUTPUT);                      // SS pin on Mega
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac);                      // Use for DHCP
+  // TODO: add error handling if DHCP fails
+  if (debugMode) {
+    Serial.print("Local IP address: ");
+    Serial.println(Ethernet.localIP());
+  }
   server.begin();
   delay(1);                                 // give it a msecond to connect
+
 
   // Pump Control
   pinMode(pinP1FlowWrite, OUTPUT);          // output to pump what speed it should go (tone between 0-200 Hz)
@@ -125,8 +135,8 @@ void setup() {
 
   // Timer
   Udp.begin(localPort);
-  setSyncProvider(getTime);                 // sync interval default is 5 mins
-  setSyncInterval(60 * 5);
+  setSyncProvider(getTime);
+  setSyncInterval(60 * 5);                  // sync interval default is 5 mins
   tUnixStart = tUnix; 
   tBackup = now();                          // set back up time
   msBackup = millis();                      // set assocated backup time on Arduino's internal clock
@@ -138,10 +148,27 @@ void setup() {
 
   // SD
   SD.begin(pinSD);
+
+  // LCD
+  lcd.begin(20,4);
+  lcd.backlight();
+  lcd.clear();
+  lcd.print("Evolvinator start...");
+  lcd.setCursor(0, 1);
+  lcd.print(Ethernet.localIP());
+
+  // Adafruit IO
+  AdafruitIOInitialize();
+
+  // Rotary Encoder
+  setupRotaryEncoder();
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Loop - is program <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 void loop() {
+
+  // Maintain DHCP lease
+  Ethernet.maintain();
 
   // If run has started
   if (tStart) {
@@ -175,6 +202,21 @@ void loop() {
   
   // Check for web requests
   webLoop(); 
+
+  // Update LCD
+  if (currentMs - oldMsLcdWrite > 1000) {
+    oldMsLcdWrite = currentMs;
+    LcdUpdate();
+  }
+
+  // Log to Adafruit every 10 seconds
+  if (currentMs - oldMsAdafruitWrite > 10000) {
+    oldMsAdafruitWrite = currentMs;
+    LogDataToAdafruitIO();
+  }
+
+  // Read rotary encoder
+  readRotaryEncoder();
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Functions - List function calls below <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< 
